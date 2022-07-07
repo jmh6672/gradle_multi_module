@@ -1,0 +1,29 @@
+subprojects {
+    apply plugin: 'java'
+
+    group 'org.example'
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+        testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}
+
+project(':sub_module_A') {
+    dependencies {
+        implementation project(':sub_common')
+    }
+}
+project(':sub_module_B') {
+    dependencies {
+        implementation project(':sub_common')
+    }
+}
