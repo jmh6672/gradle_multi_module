@@ -1,15 +1,124 @@
+buildscript {
+    ext {
+        imageRegistryIp = "100.100.103.167"
+        repoGroup = "web-dev"
+        repoUsername = "admin"
+        repoPassword = "wlwndgo"
+        servicePort = "10080"
+        serviceProfile = "dev"
+
+        springBootVersion = '2.6.4'
+        jibVersion = '3.2.1'
+    }
+    repositories {
+        mavenCentral()
+        maven {
+            // jib 사용시 필요
+          url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.11.RELEASE"
+        classpath("gradle.plugin.com.google.cloud.tools:jib-gradle-plugin:${jibVersion}")
+    }
+}
+
+
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'com.google.cloud.tools.jib'
 
     group 'org.example'
+    sourceCompatibility = '11'
+
+    //모든 모듈에서 프로퍼티 정의를 먼저 진행한다.
+    project.evaluate()
+
+    //gradle의 프로퍼티값들을 자바 리소스로 가져오기 전에 clean을 해줘서 강제 update 하기 위함.
+    compileJava{
+        dependsOn clean
+    }
+
+
+    // bootBuildImage 설정
+    bootBuildImage {
+        imageName = "${imageRegistryIp}/${repoGroup}/${project.name}:" +
+                "${(rootProject.version!='unspecified' && rootProject.version!=null && rootProject.version!='') ? rootProject.version : getVersion()}"
+        publish = true
+        docker {
+            publishRegistry {
+                username = "${repoUsername}".toString()
+                password = "${repoPassword}".toString()
+                url = "https://${imageRegistryIp}/"
+            }
+        }
+    }
+
+    // jib 설정
+    jib {
+        // private repository 사용하기 위한 설정
+        allowInsecureRegistries = true
+        from {
+            image = "adoptopenjdk:16-jre"
+        }
+        to {
+            image = "${imageRegistryIp}/${repoGroup}/${project.name}"
+            auth {
+                username = "${repoUsername}".toString()
+                password = "${repoPassword}".toString()
+            }
+            tags = [
+                    "${(rootProject.version!='unspecified' && rootProject.version!=null && rootProject.version!='') ? rootProject.version : getVersion()}",
+                    "${new Date().format("yyyyMMddHHmmss")}"
+            ]
+            container {
+                //컨테이너의 환경변수
+                environment = [
+                        "JAVA_TOOL_OPTIONS": "-Xmx2048m -Dserver.port=${servicePort}".toString(),
+                        "SPRING_PROFILES_ACTIVE": "${serviceProfile}".toString()
+                ]
+            }
+        }
+    }
+
+    //application.yml 리소스 파일에 프로퍼티값 주입
+    processResources {
+        filesMatching('**/application.yml') {
+            expand(project.properties)
+        }
+    }
+
+    //  jar 로 떨굴때 최상위 모듈의 build/ 디렉토리로
+    bootJar{
+        destinationDirectory = file(rootProject.buildDir)
+    }
+
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
 
     repositories {
         mavenCentral()
     }
 
-    dependencies {
-        testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
-        testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    dependencies{
+        implementation 'org.springframework.boot:spring-boot-starter'
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        implementation "org.springframework.boot:spring-boot-starter-aop"
+        implementation "org.springframework.boot:spring-boot-starter-validation"
+        implementation "org.springframework.boot:spring-boot-starter-actuator"
+        // swagger
+        implementation 'org.springdoc:springdoc-openapi-ui:1.3.0'
+
+        compileOnly 'org.projectlombok:lombok'
+        developmentOnly 'org.springframework.boot:spring-boot-devtools'
+        annotationProcessor 'org.projectlombok:lombok'
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
     }
 
     test {

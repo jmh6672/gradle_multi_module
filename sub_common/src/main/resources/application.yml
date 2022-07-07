@@ -1,0 +1,31 @@
+app:
+  version: 1.0.0
+  name: module-common
+
+server:
+  error:
+    path: '/error'
+  port: 9999
+
+spring:
+  output:
+    ansi:
+      enabled: detect
+  messages:
+    basename: i18n/exception
+    encoding: UTF-8
+  data:
+    mongodb:
+      # k8s 내부
+      #uri: mongodb://mongodb-headless.mongodb.svc.cluster.local:27017/service
+      # k8s external
+      uri: mongodb://root:wlwndgo@100.100.103.163:30071/ipron?replicaSet=rs0&directConnection=true&authSource=admin&authMechanism=SCRAM-SHA-1
+      # local
+      #uri: mongodb://localhost:27017/service
+
+logging:
+  pattern:
+#    console: "%d{yyyy-MM-dd HH:mm:ss.SSS}|%clr(%-5level)|%clr(%F){cyan}:%L|%clr(%logger{0}){blue}|%clr(%M){magenta}|%msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS}|%clr(%-5level)|%X{traceId}|%X{spanId}|%clr(%F){cyan}:%L|%clr(%logger{0}){blue}|%clr(%M){magenta}|%msg%n"
+  level:
+    root: info
