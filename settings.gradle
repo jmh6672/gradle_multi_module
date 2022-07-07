@@ -1,0 +1,5 @@
+rootProject.name = 'multi_module'
+include 'sub_module_A'
+include 'sub_module_B'
+include 'sub_common'
+
