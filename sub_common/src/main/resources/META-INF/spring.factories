@@ -1,1 +1,1 @@
-org.springframework.boot.env.EnvironmentPostProcessor=ipron.cloud.web.importer.YamlPropertiesEnvironmentPostProcessor
+org.springframework.boot.env.EnvironmentPostProcessor=org.example.importer.YamlPropertiesEnvironmentPostProcessor
